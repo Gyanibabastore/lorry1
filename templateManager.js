@@ -1,66 +1,35 @@
-const ejs = require('ejs');
 const fs = require('fs');
 const path = require('path');
+const puppeteer = require('puppeteer');
+const ejs = require('ejs');
 
-let puppeteer;
-let isLambda = false;
-
-try {
-  // ✅ Cloud environment (like AWS Lambda)
-  puppeteer = require('puppeteer-core');
-  var chromium = require('chrome-aws-lambda');
-  isLambda = true;
-  console.log("✅ Running in cloud environment with chrome-aws-lambda");
-} catch (err) {
-  // ✅ Local development environment
-  puppeteer = require('puppeteer');
-  console.log("✅ Running locally with full puppeteer");
-}
-
-// ✅ For safe filename creation
+// ✅ Sanitize file names (remove unsafe characters)
 function sanitize(str) {
-  return str.replace(/[^a-z0-9-_]/gi, '_').substring(0, 30);
+  return str
+    .replace(/[^a-z0-9-_]/gi, '_')  // Replace all non-alphanumeric characters
+    .substring(0, 30);              // Limit filename length to 30 characters
 }
 
-// ✅ Main function to generate PDF
 async function generatePDFWithTemplate(templateNumber, lrData, rawMessage) {
   const templatePath = path.join(__dirname, `./templates/template${templateNumber}.ejs`);
+  
   const safeFileName = sanitize(rawMessage || 'message');
   const outputDir = path.join(__dirname, './generated');
 
+  // ✅ Ensure the output directory exists
   if (!fs.existsSync(outputDir)) {
     fs.mkdirSync(outputDir, { recursive: true });
   }
 
   const outputPath = path.join(outputDir, `LR-${safeFileName}-${Date.now()}.pdf`);
+
   const html = await ejs.renderFile(templatePath, lrData);
 
-  console.log("✅ Launching headless browser...");
-
-  const launchOptions = isLambda
-    ? {
-        args: ['--no-sandbox', '--disable-setuid-sandbox', ...chromium.args],
-        executablePath: await chromium.executablePath,
-        headless: chromium.headless,
-        defaultViewport: chromium.defaultViewport,
-      }
-    : {
-        args: ['--no-sandbox', '--disable-setuid-sandbox'],
-        headless: true,
-        executablePath: puppeteer.executablePath && puppeteer.executablePath(),
-      };
-
-  const browser = await puppeteer.launch(launchOptions);
-
+  const browser = await puppeteer.launch({ headless: 'new' });
   const page = await browser.newPage();
-  console.log("✅ Setting HTML content...");
   await page.setContent(html, { waitUntil: 'networkidle0' });
-
-  console.log("✅ Generating PDF...");
   await page.pdf({ path: outputPath, format: 'A4' });
-
   await browser.close();
-  console.log("✅ PDF saved to:", outputPath);
 
   return outputPath;
 }
