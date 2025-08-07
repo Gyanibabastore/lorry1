@@ -366,7 +366,7 @@ if (cleanedMessage.startsWith('confirm remove')) {
       return res.sendStatus(200);
     }
 
-    const extracted = extractDetails(cleanedMessage);
+    const extracted =await extractDetails(cleanedMessage);
     const timeNow = new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true });
     const dateNow = new Date().toLocaleDateString('en-IN');
     const lrData = {
