@@ -1,7 +1,21 @@
-const chromium = require('chrome-aws-lambda');
 const ejs = require('ejs');
 const fs = require('fs');
 const path = require('path');
+
+let puppeteer;
+let isLambda = false;
+
+try {
+  // Try requiring chrome-aws-lambda in cloud environment
+  puppeteer = require('puppeteer-core');
+  var chromium = require('chrome-aws-lambda');
+  isLambda = true;
+  console.log("✅ Running in cloud environment with chrome-aws-lambda");
+} catch (err) {
+  // Fall back to local puppeteer
+  puppeteer = require('puppeteer');
+  console.log("✅ Running locally with full puppeteer");
+}
 
 function sanitize(str) {
   return str.replace(/[^a-z0-9-_]/gi, '_').substring(0, 30);
@@ -19,13 +33,19 @@ async function generatePDFWithTemplate(templateNumber, lrData, rawMessage) {
   const outputPath = path.join(outputDir, `LR-${safeFileName}-${Date.now()}.pdf`);
   const html = await ejs.renderFile(templatePath, lrData);
 
-  console.log("✅ Launching headless Chromium...");
-  const browser = await chromium.puppeteer.launch({
-    args: chromium.args,
-    defaultViewport: chromium.defaultViewport,
-    executablePath: await chromium.executablePath, // important for render
-    headless: chromium.headless,
-  });
+  console.log("✅ Launching headless browser...");
+  const browser = await puppeteer.launch(
+    isLambda
+      ? {
+          args: chromium.args,
+          defaultViewport: chromium.defaultViewport,
+          executablePath: await chromium.executablePath,
+          headless: chromium.headless,
+        }
+      : {
+          headless: true,
+        }
+  );
 
   const page = await browser.newPage();
   console.log("✅ Setting HTML content...");
