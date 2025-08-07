@@ -6,21 +6,23 @@ let puppeteer;
 let isLambda = false;
 
 try {
-  // Try requiring chrome-aws-lambda in cloud environment
+  // ✅ Cloud environment (like AWS Lambda)
   puppeteer = require('puppeteer-core');
   var chromium = require('chrome-aws-lambda');
   isLambda = true;
   console.log("✅ Running in cloud environment with chrome-aws-lambda");
 } catch (err) {
-  // Fall back to local puppeteer
+  // ✅ Local development environment
   puppeteer = require('puppeteer');
   console.log("✅ Running locally with full puppeteer");
 }
 
+// ✅ For safe filename creation
 function sanitize(str) {
   return str.replace(/[^a-z0-9-_]/gi, '_').substring(0, 30);
 }
 
+// ✅ Main function to generate PDF
 async function generatePDFWithTemplate(templateNumber, lrData, rawMessage) {
   const templatePath = path.join(__dirname, `./templates/template${templateNumber}.ejs`);
   const safeFileName = sanitize(rawMessage || 'message');
@@ -34,7 +36,7 @@ async function generatePDFWithTemplate(templateNumber, lrData, rawMessage) {
   const html = await ejs.renderFile(templatePath, lrData);
 
   console.log("✅ Launching headless browser...");
-  
+
   const launchOptions = isLambda
     ? {
         args: ['--no-sandbox', '--disable-setuid-sandbox', ...chromium.args],
