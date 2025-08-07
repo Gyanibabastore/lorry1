@@ -34,18 +34,21 @@ async function generatePDFWithTemplate(templateNumber, lrData, rawMessage) {
   const html = await ejs.renderFile(templatePath, lrData);
 
   console.log("✅ Launching headless browser...");
-  const browser = await puppeteer.launch(
-    isLambda
-      ? {
-          args: chromium.args,
-          defaultViewport: chromium.defaultViewport,
-          executablePath: await chromium.executablePath,
-          headless: chromium.headless,
-        }
-      : {
-          headless: true,
-        }
-  );
+  
+  const launchOptions = isLambda
+    ? {
+        args: ['--no-sandbox', '--disable-setuid-sandbox', ...chromium.args],
+        executablePath: await chromium.executablePath,
+        headless: chromium.headless,
+        defaultViewport: chromium.defaultViewport,
+      }
+    : {
+        args: ['--no-sandbox', '--disable-setuid-sandbox'],
+        headless: true,
+        executablePath: puppeteer.executablePath && puppeteer.executablePath(),
+      };
+
+  const browser = await puppeteer.launch(launchOptions);
 
   const page = await browser.newPage();
   console.log("✅ Setting HTML content...");
