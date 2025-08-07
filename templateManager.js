@@ -1,6 +1,6 @@
 const fs = require('fs');
 const path = require('path');
-const chromium = require('chrome-aws-lambda'); // ✅ Use chrome-aws-lambda
+const puppeteer = require('puppeteer');
 const ejs = require('ejs');
 
 function sanitize(str) {
@@ -19,11 +19,9 @@ async function generatePDFWithTemplate(templateNumber, lrData, rawMessage) {
   const outputPath = path.join(outputDir, `LR-${safeFileName}-${Date.now()}.pdf`);
   const html = await ejs.renderFile(templatePath, lrData);
 
-  const browser = await chromium.puppeteer.launch({
-    args: chromium.args,
-    defaultViewport: chromium.defaultViewport,
-    executablePath: await chromium.executablePath || undefined,
-    headless: chromium.headless,
+  const browser = await puppeteer.launch({
+    headless: true,
+    args: ['--no-sandbox', '--disable-setuid-sandbox'],
   });
 
   const page = await browser.newPage();
