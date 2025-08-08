@@ -22,7 +22,7 @@ Extract the following **mandatory** details from this message:
 Also, extract the **optional** field:
 - from (this is optional but often present)
 
-If truckNumber is missing, but the message contains words like "new truck", "new tractor", or "new gadi", 
+If truckNumber is missing, but the message contains words like "brllgada","bellgade","bellgad","bellgadi","new truck", "new tractor", or "new gadi", 
 then set truckNumber to that phrase (exactly as it appears).
 
 If the weight contains the word "fix" or similar, preserve it as-is.
@@ -83,6 +83,11 @@ Ensure the output is only the raw JSON — no extra text, notes, or formatting o
       if (lowerMsg.includes("new truck")) extracted.truckNumber = "new truck";
       else if (lowerMsg.includes("new tractor")) extracted.truckNumber = "new tractor";
       else if (lowerMsg.includes("new gadi")) extracted.truckNumber = "new gadi";
+      else if (lowerMsg.includes("bellgadi")) extracted.truckNumber = "bellgadi";
+      else if (lowerMsg.includes("bellgada")) extracted.truckNumber = "bellgada";
+      else if (lowerMsg.includes("bellgade")) extracted.truckNumber = "bellgade";
+      else if (lowerMsg.includes("bellgad")) extracted.truckNumber = "bellgad";
+ 
     }
 
     // Normalize truckNumber if it's NOT one of the special phrases
@@ -90,7 +95,22 @@ Ensure the output is only the raw JSON — no extra text, notes, or formatting o
       extracted.truckNumber = extracted.truckNumber
         .replace(/[\s.-]/g, "")  // remove spaces, dots, hyphens
         .toUpperCase();
+
     }
+    // Capitalize helper
+    const capitalize = (str) => {
+      if (!str) return "";
+      return str
+        .toLowerCase()
+        .split(" ")
+        .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+        .join(" ");
+    };
+
+    // Capitalize from & to & description
+    if (extracted.from) extracted.from = capitalize(extracted.from);
+    if (extracted.to) extracted.to = capitalize(extracted.to);
+    if (extracted.description) extracted.description = capitalize(extracted.description);
 
     // Weight: if weight contains "fix" (case insensitive), keep as-is, else convert as number
     if (extracted.weight) {
@@ -100,7 +120,7 @@ Ensure the output is only the raw JSON — no extra text, notes, or formatting o
       } else {
         let weightNum = parseFloat(extracted.weight);
         if (!isNaN(weightNum)) {
-          if (weightNum > 0 && weightNum < 1000) {
+          if (weightNum > 0 && weightNum < 100) {
             extracted.weight = Math.round(weightNum * 1000).toString();
           } else {
             extracted.weight = Math.round(weightNum).toString();
@@ -108,18 +128,12 @@ Ensure the output is only the raw JSON — no extra text, notes, or formatting o
         }
       }
     }
-
+    
     return extracted;
 
   } catch (error) {
     console.error("❌ Error in extractDetails:", error.message);
-    return {
-      truckNumber: "",
-      from: "",
-      to: "",
-      weight: "",
-      description: ""
-    };
+    
   }
 }
 

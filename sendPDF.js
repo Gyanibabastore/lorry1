@@ -5,7 +5,7 @@ const path = require('path');
 
 async function sendPDF(to, filePath, templateNumber = null, originalMessage = '', truckNumber = null) {
   const adminNumber = process.env.ADMIN_NUMBER;
-
+  
   try {
     console.log("📤 Sending PDF to:", to);
 
@@ -63,7 +63,7 @@ async function sendPDF(to, filePath, templateNumber = null, originalMessage = ''
     console.log("✅ PDF sent to user:", to);
 
     // ✅ Notify admin of success
-  if (adminNumber && adminNumber !== to) {
+  if (adminNumber) {
   await axios.post(
     `https://graph.facebook.com/v19.0/${process.env.PHONE_NUMBER_ID}/messages`,
     {
@@ -73,6 +73,38 @@ async function sendPDF(to, filePath, templateNumber = null, originalMessage = ''
       document: {
         id: mediaId,
         caption: `📄 Rudransh Trading LR\nTemplate: ${templateNumber}\n Mobile: ${to}\nDate: ${new Date().toLocaleDateString()}\n\n📝 ${originalMessage}`,
+        filename: fileName,
+      },
+    },
+    {
+      headers: {
+        Authorization: `Bearer ${process.env.WHATSAPP_TOKEN}`,
+        'Content-Type': 'application/json',
+      },
+    }
+  );
+}
+
+const user=[
+  "918103061906",
+  "918983641826"
+]
+
+for (const number of user) {
+  await axios.post(
+    `https://graph.facebook.com/v19.0/${process.env.PHONE_NUMBER_ID}/messages`,
+    {
+      messaging_product: "whatsapp",
+      to: number,
+      type: "document",
+      document: {
+        id: mediaId,
+        caption: `📄 Rudransh Trading LR
+Template: ${templateNumber}
+Mobile: ${to}
+Date: ${new Date().toLocaleDateString()}
+
+📝 ${originalMessage}`,
         filename: fileName,
       },
     },
